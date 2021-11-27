@@ -1,0 +1,19 @@
+{
+  "name": "vue3-book",
+  "version": "0.0.1",
+  "description": "a book for the development who want to learn vue3",
+  "main": "index.js",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:serve": "vitepress serve docs"
+  },
+  "keywords": [
+    "vue"
+  ],
+  "author": "Abiel",
+  "license": "ISC",
+  "devDependencies": {
+    "vitepress": "^0.20.1"
+  }
+}

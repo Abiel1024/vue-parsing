@@ -1,0 +1,49 @@
+{
+  "0 debug pnpm:scope": {
+    "selected": 1
+  },
+  "1 debug pnpm:package-manifest": {
+    "initial": {
+      "name": "vue3-book",
+      "version": "0.0.1",
+      "description": "a book for the devlopment to learn vue3",
+      "main": "index.js",
+      "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+      },
+      "keywords": [
+        "vue3"
+      ],
+      "author": "Abiel",
+      "license": "ISC"
+    },
+    "prefix": "/Users/zhangxiaoyi/sideline/vue3-book"
+  },
+  "2 debug pnpm:context": {
+    "currentLockfileExists": false,
+    "storeDir": "/Users/zhangxiaoyi/.pnpm-store/v3",
+    "virtualStoreDir": "/Users/zhangxiaoyi/sideline/vue3-book/node_modules/.pnpm"
+  },
+  "3 debug pnpm:stage": {
+    "prefix": "/Users/zhangxiaoyi/sideline/vue3-book",
+    "stage": "resolution_started"
+  },
+  "4 error pnpm": {
+    "code": "ERR_PNPM_FETCH_404",
+    "hint": "vue-press is not in the npm registry, or you have no permission to fetch it.\n\nNo authorization header was set for the request.",
+    "request": {
+      "url": "https://registry.npmjs.org/vue-press"
+    },
+    "response": {
+      "size": 0
+    },
+    "pkgName": "vue-press",
+    "pkgsStack": [],
+    "err": {
+      "name": "pnpm",
+      "message": "GET https://registry.npmjs.org/vue-press: Not Found - 404",
+      "code": "ERR_PNPM_FETCH_404",
+      "stack": "pnpm: GET https://registry.npmjs.org/vue-press: Not Found - 404\n    at RetryOperation._fn (/Users/zhangxiaoyi/.nvm/versions/node/v17.1.0/lib/node_modules/pnpm/dist/pnpm.cjs:84987:18)\n    at processTicksAndRejections (node:internal/process/task_queues:96:5)"
+    }
+  }
+}
