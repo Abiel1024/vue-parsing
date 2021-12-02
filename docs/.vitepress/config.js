@@ -20,13 +20,16 @@ module.exports = {
         ],
         sidebar: [
             {
-                text: 'Config Reference',
-                link: '/test',
-                activeMatch: '^/config/'
+                text: '前言',
+                link: '/'
             },
             {
-                text: 'Release Notes',
-                link: '/ac'
+                text: '初探vue项目',
+                link: '/getStart'
+            },
+            {
+                text: '项目配置',
+                link: '/projectConfig'
             }
         ]
     },
