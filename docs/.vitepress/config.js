@@ -9,13 +9,8 @@ module.exports = {
         },
         nav: [
             {
-                text: 'Config Reference',
-                link: '/config/basics',
-                activeMatch: '^/config/'
-            },
-            {
-                text: 'Release Notes',
-                link: 'https://github.com/vuejs/vitepress/releases'
+                text: 'Github',
+                link: 'https://github.com/Abiel1024/vue-parsing'
             }
         ],
         sidebar: [
