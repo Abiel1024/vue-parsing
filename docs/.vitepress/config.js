@@ -23,7 +23,7 @@ module.exports = {
                 link: '/getStart'
             },
             {
-                text: '项目配置',
+                text: 'npm run dev',
                 link: '/projectConfig'
             }
         ]
