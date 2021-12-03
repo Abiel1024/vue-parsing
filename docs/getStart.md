@@ -71,8 +71,3 @@ vue准备了几个`example`，我们可以直接用来测试。我们挑一个�
 ![todomvc.png](asserts/todomvc.png)
 
 通过这样调试，我们可以在阅读源码有疑问的时候进行打印，非常的方便。
-
-Vue3采用 [monorepo](https://segmentfault.com/a/1190000039157365) 是管理项目代码的方式。在一个 repo 中管理多个package，每个 package 都有自己的类型声明、单元测试。
-所以相较vue2来说，vue3的各个模块划分的更加清晰，读起来也更加容易。
-
-通过`pnpm-workspace.yaml` 将包模块代码放置在了packages的文件夹下。
