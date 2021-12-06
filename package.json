@@ -4,7 +4,7 @@
   "description": "a book for the development who want to learn vue3",
   "main": "index.js",
   "scripts": {
-    "docs:dev": "vitepress dev docs",
+    "docs:dev": "vitepress dev docs --port=8888",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs"
   },
