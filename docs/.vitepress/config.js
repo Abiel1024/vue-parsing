@@ -25,6 +25,10 @@ module.exports = {
             {
                 text: 'npm run dev',
                 link: '/projectConfig'
+            },
+            {
+                text: 'reactive',
+                link: '/reactive'
             }
         ]
     },
