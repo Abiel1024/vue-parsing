@@ -1,5 +1,5 @@
 module.exports = {
-    title: 'Vue3 源码分析',
+    title: 'Vue3 源码笔记',
     description: 'Just do it',
     themeConfig: {
         algolia: {

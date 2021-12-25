@@ -64,7 +64,7 @@ created packages/vue/dist/vue.global.js in 1.2s
 也就是说，本地的`vue.js`已经创建完成，在`vue/dist`目录下。
 
 vue准备了几个`example`，我们可以直接用来测试。我们挑一个打开
-```
+```html
 /vue/examples/composition/todomvc.html
 
 <script src="../../dist/vue.global.js"></script>

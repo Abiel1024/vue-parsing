@@ -47,7 +47,7 @@ execa(
   }
 )
 ```
-因为我们在执行`run dev`的时候没有传任何的参数，所以这里的`args`的值是这样的 `{_: []}`。
+因为我们在执行`run dev`的时候没有传任何的参数，通过对[minimist](https://www.npmjs.com/package/minimist)的简单学习,可以了解到这里的`args`的值是这样的 `{_: []}`。
 所以下面的值就很清晰了
 ``` javascript
 const { fuzzyMatchTarget } = require('./utils')
