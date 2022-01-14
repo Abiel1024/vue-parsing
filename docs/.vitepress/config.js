@@ -27,7 +27,7 @@ module.exports = {
                 link: '/projectConfig'
             },
             {
-                text: 'reactive',
+                text: '响应式数据',
                 link: '/reactive'
             }
         ]
