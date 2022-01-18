@@ -712,7 +712,18 @@ if (!dep) {
 ```
 
 这两段很相似, 用一个二维的Map来存对应的dep。第一个维度是target，第二个维度是key，每次获取前先从map里读，读不到就设置进去。
+最终dep是createDep的返回结果
+```typescript
+export const createDep = (effects?: ReactiveEffect[]): Dep => {
+  const dep = new Set<ReactiveEffect>(effects) as Dep
+  dep.w = 0
+  dep.n = 0
+  return dep
+}
+```
+可以看到dep是一个Set的实例，但是多了`w`和`n`两个属性，这两个属性初始值都是0。
 
+再继续往下看
 ```typescript
   const eventInfo = __DEV__
     ? {effect: activeEffect, target, type, key}
@@ -771,11 +782,39 @@ if (effectTrackDepth <= maxMarkerBits) {
 }
 ```
 
-首先是在当前函数作用于声明一个`shouldTrack`变量，然后判断effectTrackDepth和maxMarkerBits的关系，这个逻辑上面解释过了。 然后是newTracked(dep)
-
+首先是在当前函数作用于声明一个`shouldTrack`变量，然后判断effectTrackDepth和maxMarkerBits的关系，这个逻辑上面解释过了。
 ```typescript
-
+export const wasTracked = (dep: Dep): boolean => (dep.w & trackOpBit) > 0
+export const newTracked = (dep: Dep): boolean => (dep.n & trackOpBit) > 0
 ```
+因为`dep.n`和`dep.w` 是 0， 所以位运算`&`之后都为0，所以`!newTracked(dep)`和`!wasTracked(dep)`都会true。
+这里的`&`运算，是只有两者都为1的情况，结果才是以1。
+
+再来说下这个语法
+```typescript
+dep.n |= trackOpBit  //等同于 dep.n = dep.n | trackOpBit
+```
+因为`shouldTrack`是`true`，所以再往下进入到判断中
+```typescript
+if (shouldTrack) {
+    dep.add(activeEffect!)
+    activeEffect!.deps.push(dep)
+    if (__DEV__ && activeEffect!.onTrack) {
+        activeEffect!.onTrack(
+            Object.assign(
+                {
+                    effect: activeEffect!
+                },
+                debuggerEventExtraInfo
+            )
+        )
+    }
+}
+```
+首先是当前的dep里push当前的实例对象，也就是fn函数生成的`reactiveEffect`。
+然是在reactiveEffect中push当前dep。
+下面的是开发环境的调试模块，也可以先不关心。
+
 
 ## 3.触发响应
 
