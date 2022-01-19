@@ -20,7 +20,6 @@ export function reactive(target: object) {
     if (target && (target as Target)[ReactiveFlags.IS_READONLY]) {
         return target
     }
-    console.log('target', target)
     return createReactiveObject(
         target,
         false,
@@ -711,19 +710,21 @@ if (!dep) {
 }
 ```
 
-这两段很相似, 用一个二维的Map来存对应的dep。第一个维度是target，第二个维度是key，每次获取前先从map里读，读不到就设置进去。
-最终dep是createDep的返回结果
+这两段很相似, 用一个二维的Map来存对应的dep。第一个维度是target，第二个维度是key，每次获取前先从map里读，读不到就设置进去。 最终dep是createDep的返回结果
+
 ```typescript
 export const createDep = (effects?: ReactiveEffect[]): Dep => {
-  const dep = new Set<ReactiveEffect>(effects) as Dep
-  dep.w = 0
-  dep.n = 0
-  return dep
+    const dep = new Set<ReactiveEffect>(effects) as Dep
+    dep.w = 0
+    dep.n = 0
+    return dep
 }
 ```
+
 可以看到dep是一个Set的实例，但是多了`w`和`n`两个属性，这两个属性初始值都是0。
 
 再继续往下看
+
 ```typescript
   const eventInfo = __DEV__
     ? {effect: activeEffect, target, type, key}
@@ -783,18 +784,22 @@ if (effectTrackDepth <= maxMarkerBits) {
 ```
 
 首先是在当前函数作用于声明一个`shouldTrack`变量，然后判断effectTrackDepth和maxMarkerBits的关系，这个逻辑上面解释过了。
+
 ```typescript
 export const wasTracked = (dep: Dep): boolean => (dep.w & trackOpBit) > 0
 export const newTracked = (dep: Dep): boolean => (dep.n & trackOpBit) > 0
 ```
-因为`dep.n`和`dep.w` 是 0， 所以位运算`&`之后都为0，所以`!newTracked(dep)`和`!wasTracked(dep)`都会true。
-这里的`&`运算，是只有两者都为1的情况，结果才是以1。
+
+这里的`&`运算，是只有两者都为1的情况，结果才是以1。 因为`dep.n`和`dep.w` 是 0， 所以位运算`&`之后都为0，所以`!newTracked(dep)`和`!wasTracked(dep)`都会true。
 
 再来说下这个语法
+
 ```typescript
 dep.n |= trackOpBit  //等同于 dep.n = dep.n | trackOpBit
 ```
+
 因为`shouldTrack`是`true`，所以再往下进入到判断中
+
 ```typescript
 if (shouldTrack) {
     dep.add(activeEffect!)
@@ -811,10 +816,269 @@ if (shouldTrack) {
     }
 }
 ```
-首先是当前的dep里push当前的实例对象，也就是fn函数生成的`reactiveEffect`。
-然是在reactiveEffect中push当前dep。
-下面的是开发环境的调试模块，也可以先不关心。
 
+首先是当前的dep里push当前的实例对象，也就是fn函数生成的`reactiveEffect`。 然是在reactiveEffect中push当前dep。 下面的是开发环境的调试模块，也可以先不关心。
+所以到这里就订阅数据响应的工作就完成了。
 
 ## 3.触发响应
+
+依赖收集完之后，就是依赖的触发。通过修改`state.count`，会触发代理对象的set方法。而`set`方法在前面介绍了会触发trigger方法。 先回顾下之前的调用
+
+```typescript
+if (!hadKey) {
+    trigger(target, TriggerOpTypes.ADD, key, value)
+} else if (hasChanged(value, oldValue)) {
+    trigger(target, TriggerOpTypes.SET, key, value, oldValue)
+}
+```
+
+再来看`trigger`方法
+
+```typescript
+export function trigger(
+    target: object,
+    type: TriggerOpTypes,
+    key?: unknown,
+    newValue?: unknown,
+    oldValue?: unknown,
+    oldTarget?: Map<unknown, unknown> | Set<unknown>
+) {
+    const depsMap = targetMap.get(target)
+    if (!depsMap) {
+        // never been tracked
+        return
+    }
+
+    let deps: (Dep | undefined)[] = []
+    if (type === TriggerOpTypes.CLEAR) {
+        // collection being cleared
+        // trigger all effects for target
+        deps = [...depsMap.values()]
+    } else if (key === 'length' && isArray(target)) {
+        depsMap.forEach((dep, key) => {
+            if (key === 'length' || key >= (newValue as number)) {
+                deps.push(dep)
+            }
+        })
+    } else {
+        // schedule runs for SET | ADD | DELETE
+        if (key !== void 0) {
+            deps.push(depsMap.get(key))
+        }
+
+        // also run for iteration key on ADD | DELETE | Map.SET
+        switch (type) {
+            case TriggerOpTypes.ADD:
+                if (!isArray(target)) {
+                    deps.push(depsMap.get(ITERATE_KEY))
+                    if (isMap(target)) {
+                        deps.push(depsMap.get(MAP_KEY_ITERATE_KEY))
+                    }
+                } else if (isIntegerKey(key)) {
+                    // new index added to array -> length changes
+                    deps.push(depsMap.get('length'))
+                }
+                break
+            case TriggerOpTypes.DELETE:
+                if (!isArray(target)) {
+                    deps.push(depsMap.get(ITERATE_KEY))
+                    if (isMap(target)) {
+                        deps.push(depsMap.get(MAP_KEY_ITERATE_KEY))
+                    }
+                }
+                break
+            case TriggerOpTypes.SET:
+                if (isMap(target)) {
+                    deps.push(depsMap.get(ITERATE_KEY))
+                }
+                break
+        }
+    }
+
+    const eventInfo = __DEV__
+        ? {target, type, key, newValue, oldValue, oldTarget}
+        : undefined
+
+    if (deps.length === 1) {
+        if (deps[0]) {
+            if (__DEV__) {
+                triggerEffects(deps[0], eventInfo)
+            } else {
+                triggerEffects(deps[0])
+            }
+        }
+    } else {
+        const effects: ReactiveEffect[] = []
+        for (const dep of deps) {
+            if (dep) {
+                effects.push(...dep)
+            }
+        }
+        if (__DEV__) {
+            triggerEffects(createDep(effects), eventInfo)
+        } else {
+            triggerEffects(createDep(effects))
+        }
+    }
+}
+```
+
+首先是参数，通过命名应该比较容易理解。第一部分
+
+```typescript
+  const depsMap = targetMap.get(target)
+if (!depsMap) {
+    // never been tracked
+    return
+}
+```
+
+这里targetMap就是在track中存入的，当depsMap不存在，也就是没有订阅者时，不需要进行通知，所以直接`return`。
+
+```typescript
+  let deps: (Dep | undefined)[] = []
+if (type === TriggerOpTypes.CLEAR) {
+    // collection being cleared
+    // trigger all effects for target
+    deps = [...depsMap.values()]
+} else if (key === 'length' && isArray(target)) {
+    depsMap.forEach((dep, key) => {
+        if (key === 'length' || key >= (newValue as number)) {
+            deps.push(dep)
+        }
+    })
+} else {
+    // ...
+}
+```
+
+这里首先声明了一个dep的数组，然后对类型进行了区分。 我们先从对象入手分析，在trigger中会传`TriggerOpTypes.SET`和`TriggerOpTypes.ADD`两种类型，所以这里会进入的else分支
+
+```typescript
+// schedule runs for SET | ADD | DELETE
+if (key !== void 0) {
+    deps.push(depsMap.get(key))
+}
+```
+在else分支里，首先对key进行了判断， `key !== void 0`判断了`undefined`和`null`类型。
+如果key是有值的，deps会push`depsMap.get(key)`的结果。这个结果在之前分析了，是一个Set,也就是不重复的`ReactiveEffect`集合。
+
+再接下来是对key进行分析
+```typescript
+// also run for iteration key on ADD | DELETE | Map.SET
+switch (type) {
+    case TriggerOpTypes.ADD:
+        if (!isArray(target)) {
+            deps.push(depsMap.get(ITERATE_KEY))
+            if (isMap(target)) {
+                deps.push(depsMap.get(MAP_KEY_ITERATE_KEY))
+            }
+        } else if (isIntegerKey(key)) {
+            // new index added to array -> length changes
+            deps.push(depsMap.get('length'))
+        }
+        break
+    case TriggerOpTypes.DELETE:
+        if (!isArray(target)) {
+            deps.push(depsMap.get(ITERATE_KEY))
+            if (isMap(target)) {
+                deps.push(depsMap.get(MAP_KEY_ITERATE_KEY))
+            }
+        }
+        break
+    case TriggerOpTypes.SET:
+        if (isMap(target)) {
+            deps.push(depsMap.get(ITERATE_KEY))
+        }
+        break
+}
+```
+这里的目标都是往`deps`里`push`内容，我们带入修改对象的属性，也就是`target`是`Object`，type是`TriggerOpTypes.SET`，会发现这一段其实什么也没做，所以继续往下。
+
+```typescript
+  const eventInfo = __DEV__
+    ? { target, type, key, newValue, oldValue, oldTarget }
+    : undefined
+```
+再往下是eventInfo,这里和get中一样，也是开发环境的调试api，也忽略，再往下看。
+
+```typescript
+  if (deps.length === 1) {
+    if (deps[0]) {
+      if (__DEV__) {
+        triggerEffects(deps[0], eventInfo)
+      } else {
+        triggerEffects(deps[0])
+      }
+    }
+  } else {
+    const effects: ReactiveEffect[] = []
+    for (const dep of deps) {
+      if (dep) {
+        effects.push(...dep)
+      }
+    }
+    if (__DEV__) {
+      triggerEffects(createDep(effects), eventInfo)
+    } else {
+      triggerEffects(createDep(effects))
+    }
+  }
+```
+最后一段代码最终都是为了调用`triggerEffects`，按照我们上面的分析。如果说是对象的属性，其实deps会是一个长度为1，第一项值是一个依赖set的值。
+在不关心`eventInfo`的情况下，会进入到`triggerEffects(deps[0])`。
+```typescript
+export function triggerEffects(
+  dep: Dep | ReactiveEffect[],
+  debuggerEventExtraInfo?: DebuggerEventExtraInfo
+) {
+  // spread into array for stabilization
+  for (const effect of isArray(dep) ? dep : [...dep]) {
+    if (effect !== activeEffect || effect.allowRecurse) {
+      if (__DEV__ && effect.onTrigger) {
+        effect.onTrigger(extend({ effect }, debuggerEventExtraInfo))
+      }
+      if (effect.scheduler) {
+        effect.scheduler()
+      } else {
+        effect.run()
+      }
+    }
+  }
+}
+```
+这里先做一个循环，当因为传入的dep可能是Set，进行了判断。
+```typescript
+if (effect !== activeEffect || effect.allowRecurse) {
+}
+```
+然后是判断effect和activeEffect，在effect中读取并修改对应的值的时候会导致两者一致，这时候不触发，不然会导致递归调用，除非当前依赖允许递归，也就是判断的第二个值`effect.allowRecurse`
+
+忽略dev情况下，因为在生成`ReactiveEffect`实例时，目前只传入fn，所以`effect.scheduler`也是不存在的。最终会调用`effect.run()`
+
+`effect.run()`方法在trick中已经分析过一次
+```typescript
+export class ReactiveEffect<T = any> {
+  // ...
+  run() {
+    if (!this.active) {
+      return this.fn()
+    }
+    if (!effectStack.includes(this)) {
+      try {
+          // ...
+        return this.fn()
+      } finally {
+          // ...
+      }
+    }
+  }
+  // ...
+}
+```
+会在调用一次fn的方法，从而完成了数据的响应式。但是可以注意到，run方法重新执行了，那依赖也会被重新收集，
+
+### 依赖的重复收集
+
+## 数组的响应式
 
