@@ -1,5 +1,5 @@
 module.exports = {
-    title: 'Vue3 源码分析',
+    title: 'Vue3 源码笔记',
     description: 'Just do it',
     themeConfig: {
         algolia: {
@@ -9,24 +9,26 @@ module.exports = {
         },
         nav: [
             {
-                text: 'Config Reference',
-                link: '/config/basics',
-                activeMatch: '^/config/'
-            },
-            {
-                text: 'Release Notes',
-                link: 'https://github.com/vuejs/vitepress/releases'
+                text: 'Github',
+                link: 'https://github.com/Abiel1024/vue-parsing'
             }
         ],
         sidebar: [
             {
-                text: 'Config Reference',
-                link: '/test',
-                activeMatch: '^/config/'
+                text: '前言',
+                link: '/'
             },
             {
-                text: 'Release Notes',
-                link: '/ac'
+                text: '初探vue项目',
+                link: '/getStart'
+            },
+            {
+                text: 'npm run dev',
+                link: '/projectConfig'
+            },
+            {
+                text: '响应式数据',
+                link: '/reactive'
             }
         ]
     },
